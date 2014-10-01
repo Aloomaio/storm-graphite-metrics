@@ -52,13 +52,17 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			TopologyContext context, IErrorReporter errorReporter) {
 		LOG.trace("preparing grapite metrics consumer");
 		String graphiteHostFromConf = (String) stormConf.get(GRAPHITE_HOST_KEY);
-		Integer graphitePortFromConf = (Integer) stormConf.get(GRAPHITE_PORT_KEY);
-		LOG.trace(String.format("got graphite connection details from conf: %s:%s", graphiteHostFromConf, graphitePortFromConf));
+		String graphitePortFromConf = (String) stormConf.get(GRAPHITE_PORT_KEY);
 		if (null != graphiteHostFromConf) {
 			graphiteHost = graphiteHostFromConf;
 		}
 		if (null != graphitePortFromConf) {
-			graphitePort = graphitePortFromConf.intValue();
+			try {
+				graphitePort = Integer.valueOf(graphitePortFromConf);
+			} catch(NumberFormatException e) {
+				LOG.error(String.format("port must be an Integer, got: %s", graphitePortFromConf));
+				throw e;
+			}
 		}
 	}
 
