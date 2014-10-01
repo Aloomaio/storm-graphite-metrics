@@ -83,14 +83,9 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
 			LOG.trace(String.format("Graphite connected, got %d datapoints", dataPoints.size()));
 			for (DataPoint p : dataPoints) {
-				LOG.trace(String.format("Registering data point to graphite: %s, %s", p.name, p.value));
-				/* 
-				 * Storm sends metrics either as a number, or in JSON format.
-				 * Let us conform with these definitions and attempt to parse the data as a JSON (more common usecase) or as a number. 
-				 * Assume that the metrics value is given as JSON where all values are numbers (floats)
-				 * However, failure in parsing is a silent failure (TRACE)
-				 */
+				LOG.trace(String.format("Registering data point to graphite: %s, %s. Value type is: %s", p.name, p.value, p.getClass().getCanonicalName()));
 				
+				/*
 	            JsonFactory factory = mapper.getJsonFactory();
 	            JsonParser jp;
 	            try {
@@ -101,7 +96,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	                	Entry<String, JsonNode> next = itr.next();
 	                	graphiteWriter.printf("%s.%s %f %d\n", p.name, next.getKey(), next.getValue().asDouble(), graphiteTimestamp);
 	                }
-	                continue; /* Do not try to parse as double*/
+	                continue; 
 	            } catch (JsonParseException e) {
 	            	LOG.trace("metric was not given in nither in valid JSON format, will try double");
 	            } catch (IOException e) {
@@ -111,7 +106,8 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	            	graphiteWriter.printf("%s %f %d\n", p.name, Double.parseDouble((String) p.value), graphiteTimestamp);
 	            } catch(NumberFormatException e) {
 	            	LOG.trace("metric was not given in nither in valid JSON format nor in double format");
-	            }
+	            }*/
+	            
 			}
 			graphiteWriter.close();
 			socket.close();
