@@ -81,7 +81,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
 			Socket socket = new Socket(graphiteHost, graphitePort);
 			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
-			LOG.trace("Graphite connected");
+			LOG.trace(String.format("Graphite connected, got %d datapoints", dataPoints.size()));
 			for (DataPoint p : dataPoints) {
 				LOG.trace(String.format("Registering data point to graphite: %s, %s", p.name, p.value));
 				/* 
@@ -103,9 +103,9 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	                }
 	                continue; /* Do not try to parse as double*/
 	            } catch (JsonParseException e) {
-	            	/*do nothing*/
+	            	LOG.trace("metric was not given in nither in valid JSON format, will try double");
 	            } catch (IOException e) {
-	            	/*do nothing*/
+	            	LOG.trace("metric was not given in nither in valid JSON format, will try double");
 	            }
 	            try {
 	            	graphiteWriter.printf("%s %f %d\n", p.name, Double.parseDouble((String) p.value), graphiteTimestamp);
