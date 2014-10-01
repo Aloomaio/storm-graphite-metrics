@@ -50,8 +50,10 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 
 	public void prepare(Map stormConf, Object registrationArgument,
 			TopologyContext context, IErrorReporter errorReporter) {
+		LOG.trace("preparing grapite metrics consumer");
 		String graphiteHostFromConf = (String) stormConf.get(GRAPHITE_HOST_KEY);
 		Integer graphitePortFromConf = (Integer) stormConf.get(GRAPHITE_PORT_KEY);
+		LOG.trace(String.format("got graphite connection details from conf: %s:%s", graphiteHostFromConf, graphitePortFromConf));
 		if (null != graphiteHostFromConf) {
 			graphiteHost = graphiteHostFromConf;
 		}
