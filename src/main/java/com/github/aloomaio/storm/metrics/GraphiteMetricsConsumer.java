@@ -67,6 +67,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
 			Socket socket = new Socket(graphiteHost, graphitePort);
 			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
+			LOG.trace("Graphite connected");
 			for (DataPoint p : dataPoints) {
 				LOG.trace(String.format("Registering data point to graphite: %s, %s", p.name, p.value));
 				graphiteWriter.printf("%s %d %d\n", p.name, p.value, graphiteTimestamp);
