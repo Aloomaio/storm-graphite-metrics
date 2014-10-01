@@ -4,15 +4,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +83,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 					Set<Map.Entry> entries = ((Map) p.value).entrySet();
 					for(Map.Entry e : entries) {
 						LOG.trace(String.format("Registering a value inside a datapoint map to graphite: %s, %s. Value type is: %s", e.getKey(), e.getValue(), e.getValue().getClass().getCanonicalName()));
-						graphiteWriter.printf("%s.%s %s %lu\n", p.name, e.getKey(), e.getValue(), graphiteTimestamp);
+						graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, e.getKey(), e.getValue(), graphiteTimestamp);
 					}
 				}
 				/*
