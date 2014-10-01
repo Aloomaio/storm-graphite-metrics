@@ -71,7 +71,6 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 
 	public void handleDataPoints(TaskInfo taskInfo,
 			Collection<DataPoint> dataPoints) {
-		long graphiteTimestamp = taskInfo.timestamp / 1000;
 		try {
 			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
 			Socket socket = new Socket(graphiteHost, graphitePort);
@@ -82,10 +81,10 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 				if(p.value instanceof Map) {
 					Set<Map.Entry> entries = ((Map) p.value).entrySet();
 					for(Map.Entry e : entries) {
-						graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, e.getKey(), e.getValue(), graphiteTimestamp);
+						graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, e.getKey(), e.getValue(), taskInfo.timestamp);
 					}
 				} else if(p.value instanceof Number) {
-					graphiteWriter.printf("%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, p.value, graphiteTimestamp);
+					graphiteWriter.printf("%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, p.value, taskInfo.timestamp);
 				} else {
 					LOG.debug(String.format("Got datapoint with unsupported type, %s", p.value.getClass().getCanonicalName()));
 				}          
