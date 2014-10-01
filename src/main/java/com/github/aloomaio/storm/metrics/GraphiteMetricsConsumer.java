@@ -37,8 +37,7 @@ import backtype.storm.task.TopologyContext;
  * metric name is taken "as is".
  */
 public class GraphiteMetricsConsumer implements IMetricsConsumer {
-	public static final Logger LOG = LoggerFactory
-			.getLogger(GraphiteMetricsConsumer.class);
+	public static final Logger LOG = LoggerFactory.getLogger(GraphiteMetricsConsumer.class);
 
 	public static final String GRAPHITE_HOST_KEY = "alooma.metrics.graphite.host";
 	public static final String GRAPHITE_PORT_KEY = "alooma.metrics.graphite.port";
@@ -65,14 +64,17 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			Collection<DataPoint> dataPoints) {
 		long graphiteTimestamp = taskInfo.timestamp / 1000;
 		try {
+			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
 			Socket socket = new Socket(graphiteHost, graphitePort);
 			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
 			for (DataPoint p : dataPoints) {
+				LOG.trace(String.format("Registering data point to graphite: %s, %s", p.name, p.value));
 				graphiteWriter.printf("%s %d %d\n", p.name, p.value, graphiteTimestamp);
 			}
 			graphiteWriter.close();
 			socket.close();
 		} catch(IOException e) {
+			LOG.error("IOException in graphite metrics consumer", e);
 			throw new RuntimeException(e);
 		}
 	}
