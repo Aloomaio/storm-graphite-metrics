@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
@@ -83,8 +84,13 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
 			LOG.trace(String.format("Graphite connected, got %d datapoints", dataPoints.size()));
 			for (DataPoint p : dataPoints) {
-				LOG.trace(String.format("Registering data point to graphite: %s, %s. Value type is: %s", p.name, p.value, p.getClass().getCanonicalName()));
-				
+				LOG.trace(String.format("Registering data point to graphite: %s, %s. Value type is: %s", p.name, p.value, p.value.getClass().getCanonicalName()));
+				if(p.value instanceof Map) {
+					Set<Map.Entry> entries = ((Map) p.value).entrySet();
+					for(Map.Entry e : entries) {
+						graphiteWriter.printf("%s.%s %f %d\n", p.name, e.getKey(), e.getValue(), graphiteTimestamp);
+					}
+				}
 				/*
 	            JsonFactory factory = mapper.getJsonFactory();
 	            JsonParser jp;
