@@ -89,7 +89,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 					Set<Map.Entry> entries = ((Map) p.value).entrySet();
 					for(Map.Entry e : entries) {
 						LOG.trace(String.format("Registering a value inside a datapoint map to graphite: %s, %s. Value type is: %s", e.getKey(), e.getValue(), e.getValue().getClass().getCanonicalName()));
-						graphiteWriter.printf("%s.%s %f %d\n", p.name, e.getKey(), e.getValue(), graphiteTimestamp);
+						graphiteWriter.printf("%s.%s %s %lu\n", p.name, e.getKey(), e.getValue(), graphiteTimestamp);
 					}
 				}
 				/*
