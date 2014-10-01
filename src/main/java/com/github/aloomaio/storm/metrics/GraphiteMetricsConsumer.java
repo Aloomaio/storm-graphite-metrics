@@ -4,8 +4,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +54,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	 */
 	private String graphiteHost = "localhost";
 	private int graphitePort = 2003;
+	private ObjectMapper mapper = new ObjectMapper();
 
 	public void prepare(Map stormConf, Object registrationArgument,
 			TopologyContext context, IErrorReporter errorReporter) {
@@ -76,7 +84,34 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			LOG.trace("Graphite connected");
 			for (DataPoint p : dataPoints) {
 				LOG.trace(String.format("Registering data point to graphite: %s, %s", p.name, p.value));
-				graphiteWriter.printf("%s %d %d\n", p.name, p.value, graphiteTimestamp);
+				/* 
+				 * Storm sends metrics either as a number, or in JSON format.
+				 * Let us conform with these definitions and attempt to parse the data as a JSON (more common usecase) or as a number. 
+				 * Assume that the metrics value is given as JSON where all values are numbers (floats)
+				 * However, failure in parsing is a silent failure (TRACE)
+				 */
+				
+	            JsonFactory factory = mapper.getJsonFactory();
+	            JsonParser jp;
+	            try {
+	            	jp = factory.createJsonParser((String) p.value);
+	                JsonNode actualObj = mapper.readTree(jp);
+	                Iterator<Entry<String, JsonNode>> itr = actualObj.getFields();
+	                while(itr.hasNext()) {
+	                	Entry<String, JsonNode> next = itr.next();
+	                	graphiteWriter.printf("%s.%s %f %d\n", p.name, next.getKey(), next.getValue().asDouble(), graphiteTimestamp);
+	                }
+	                continue; /* Do not try to parse as double*/
+	            } catch (JsonParseException e) {
+	            	/*do nothing*/
+	            } catch (IOException e) {
+	            	/*do nothing*/
+	            }
+	            try {
+	            	graphiteWriter.printf("%s %f %d\n", p.name, Double.parseDouble((String) p.value), graphiteTimestamp);
+	            } catch(NumberFormatException e) {
+	            	LOG.trace("metric was not given in nither in valid JSON format nor in double format");
+	            }
 			}
 			graphiteWriter.close();
 			socket.close();
