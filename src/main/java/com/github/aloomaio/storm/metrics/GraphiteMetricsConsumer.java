@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ import backtype.storm.task.TopologyContext;
 /****
  * This class enable metric transmission from storm to graphite.
  * Graphite connection details can be provided via storm configuration.
- * metric name is taken "as is".
+ * metric name is taken "as is", and is prepended by the taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, taskInfo.srcTaskId
  */
 public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	public static final Logger LOG = LoggerFactory.getLogger(GraphiteMetricsConsumer.class);
@@ -49,8 +48,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 	 */
 	private String graphiteHost = "localhost";
 	private int graphitePort = 2003;
-	private ObjectMapper mapper = new ObjectMapper();
-
+	
 	public void prepare(Map stormConf, Object registrationArgument,
 			TopologyContext context, IErrorReporter errorReporter) {
 		LOG.trace("preparing grapite metrics consumer");
@@ -69,8 +67,7 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 		}
 	}
 
-	public void handleDataPoints(TaskInfo taskInfo,
-			Collection<DataPoint> dataPoints) {
+	public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
 		try {
 			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
 			Socket socket = new Socket(graphiteHost, graphitePort);
@@ -78,14 +75,17 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			LOG.trace(String.format("Graphite connected, got %d datapoints", dataPoints.size()));
 			for (DataPoint p : dataPoints) {
 				LOG.trace(String.format("Registering data point to graphite: %s, %s. Value type is: %s", p.name, p.value, p.value.getClass().getCanonicalName()));
+				//yikes, we must use Run Time Type Information.
 				if(p.value instanceof Map) {
+					//storm uses raw map without generic types
 					Set<Map.Entry> entries = ((Map) p.value).entrySet();
 					for(Map.Entry e : entries) {
-						graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, e.getKey(), e.getValue(), taskInfo.timestamp);
+						graphiteWriter.printf("%s.%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort,taskInfo.srcTaskId, p.name, e.getKey(), e.getValue(), taskInfo.timestamp);
 					}
 				} else if(p.value instanceof Number) {
-					graphiteWriter.printf("%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, p.value, taskInfo.timestamp);
+					graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, taskInfo.srcTaskId, p.name, p.value, taskInfo.timestamp);
 				} else {
+					//(relatively) Silent failure, as all kinds of metrics can be sent here 
 					LOG.debug(String.format("Got datapoint with unsupported type, %s", p.value.getClass().getCanonicalName()));
 				}          
 			}
