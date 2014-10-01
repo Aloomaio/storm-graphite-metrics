@@ -82,33 +82,13 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 				if(p.value instanceof Map) {
 					Set<Map.Entry> entries = ((Map) p.value).entrySet();
 					for(Map.Entry e : entries) {
-						LOG.trace(String.format("Registering a value inside a datapoint map to graphite: %s, %s. Value type is: %s", e.getKey(), e.getValue(), e.getValue().getClass().getCanonicalName()));
 						graphiteWriter.printf("%s.%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, e.getKey(), e.getValue(), graphiteTimestamp);
 					}
-				}
-				/*
-	            JsonFactory factory = mapper.getJsonFactory();
-	            JsonParser jp;
-	            try {
-	            	jp = factory.createJsonParser((String) p.value);
-	                JsonNode actualObj = mapper.readTree(jp);
-	                Iterator<Entry<String, JsonNode>> itr = actualObj.getFields();
-	                while(itr.hasNext()) {
-	                	Entry<String, JsonNode> next = itr.next();
-	                	graphiteWriter.printf("%s.%s %f %d\n", p.name, next.getKey(), next.getValue().asDouble(), graphiteTimestamp);
-	                }
-	                continue; 
-	            } catch (JsonParseException e) {
-	            	LOG.trace("metric was not given in nither in valid JSON format, will try double");
-	            } catch (IOException e) {
-	            	LOG.trace("metric was not given in nither in valid JSON format, will try double");
-	            }
-	            try {
-	            	graphiteWriter.printf("%s %f %d\n", p.name, Double.parseDouble((String) p.value), graphiteTimestamp);
-	            } catch(NumberFormatException e) {
-	            	LOG.trace("metric was not given in nither in valid JSON format nor in double format");
-	            }*/
-	            
+				} else if(p.value instanceof Number) {
+					graphiteWriter.printf("%s.%s.%s %s %d\n", taskInfo.srcWorkerHost, taskInfo.srcWorkerPort, p.name, p.value, graphiteTimestamp);
+				} else {
+					LOG.debug(String.format("Got datapoint with unsupported type, %s", p.value.getClass().getCanonicalName()));
+				}          
 			}
 			graphiteWriter.close();
 			socket.close();
