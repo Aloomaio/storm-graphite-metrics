@@ -16,8 +16,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<url>https://github.com/Aloomaio/storm-graphite-metrics</url>
-		<connection>https://github.com/Aloomaio/storm-graphite-metrics</connection>
+		<connection>scm:git:git@github.com:aloomaio/storm-graphite-metrics</connection>
+		<url>scm:git:git@github.com:aloomaio/storm-graphite-metrics.git</url>
+		<developerConnection>scm:git:git@github.com:aloomaio/storm-graphite-metrics.git</developerConnection>
 	</scm>
 	<developers>
 		<developer>
