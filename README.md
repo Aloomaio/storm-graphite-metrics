@@ -1,5 +1,5 @@
 #storm-graphite-metrics
-Metrics consumer for apache storm that exports metrics into graphite
+Metrics consumer for apache storm that exports metrics from Storm into graphite, using Storm's Metric Consumer interface.
 
 ##Usage
 In Storm configuration
