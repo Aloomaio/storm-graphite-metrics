@@ -83,6 +83,12 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 				throw e;
 			}
 		}
+		if(null != formatFromConf) {
+			this.format = formatFromConf;
+		}
+		if(null != formatSingleFromConf) {
+			this.formatSingle = formatSingleFromConf;
+		}
 	}
 
 	public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
