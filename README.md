@@ -8,7 +8,7 @@ In Storm configuration
    conf.put(GraphiteMetricsConsumer.GRAPHITE_HOST, "<your graphite host>"); //default localhost
    conf.put(GraphiteMetricsConsumer.GRAPHITE_PORT, "<your graphite port>"); //default 2003
 ```
-##Configure Output Format
+##Configure Output Format (Optional)
 Graphite expects incoming data in the format of <path.to.metric> <numeric value> <timestamp>
 Some of the transmitted metrics will have inner key-value pairs (e.g. HashMap), while others come as raw value.
 
