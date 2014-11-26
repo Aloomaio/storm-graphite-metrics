@@ -1,8 +1,5 @@
 package com.github.aloomaio.storm.metrics;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +62,8 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 			OutputFormatConstructs.SRC_TASK_ID.magicSequence,
 			OutputFormatConstructs.METRIC_NAME.magicSequence);
 	
+	private GraphiteMetricsReporter reporter;
+	
 	public void prepare(Map stormConf, Object registrationArgument,
 			TopologyContext context, IErrorReporter errorReporter) {
 		LOG.trace("preparing grapite metrics consumer");
@@ -89,40 +88,35 @@ public class GraphiteMetricsConsumer implements IMetricsConsumer {
 		if(null != formatSingleFromConf) {
 			this.formatSingle = formatSingleFromConf;
 		}
+		reporter = new GraphiteMetricsReporter(graphiteHost, graphitePort);
+		reporter.start();
 	}
 
 	public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
-		try {
-			LOG.trace(String.format("Connecting to graphite on %s:%d", graphiteHost, graphitePort));
-			Socket socket = new Socket(graphiteHost, graphitePort);
-			PrintWriter graphiteWriter = new PrintWriter(socket.getOutputStream(), true);
-			LOG.trace(String.format("Graphite connected, got %d datapoints", dataPoints.size()));
-			for (DataPoint p : dataPoints) {
-				LOG.trace(String.format("Registering data point to graphite: %s, %s. Value type is: %s", p.name, p.value, p.value.getClass().getCanonicalName()));
-				//yikes, we must use Run Time Type Information.
-				if(p.value instanceof Map) {
-					//storm uses raw map without generic types
-					Set<Map.Entry> entries = ((Map) p.value).entrySet();
-					for(Map.Entry e : entries) {
-						graphiteWriter.printf("%s %s %d\n", OutputFormatConstructs.formatStringForGraphite(format, taskInfo, p.name, (String) e.getKey()), e.getValue(), taskInfo.timestamp);
-					}
-				} else if(p.value instanceof Number) {
-					graphiteWriter.printf("%s %s %d\n", OutputFormatConstructs.formatStringForGraphite(formatSingle, taskInfo, p.name, null), p.value, taskInfo.timestamp);
-				} else {
-					//(relatively) Silent failure, as all kinds of metrics can be sent here 
-					LOG.debug(String.format("Got datapoint with unsupported type, %s", p.value.getClass().getCanonicalName()));
-				}          
-			}
-			graphiteWriter.close();
-			socket.close();
-		} catch(IOException e) {
-			LOG.error("IOException in graphite metrics consumer", e);
-			throw new RuntimeException(e);
-		}
+		LOG.trace(String.format("graphite connected, got %d datapoints", dataPoints.size()));
+		for (DataPoint p : dataPoints) {
+			LOG.trace(String.format("Registering data point to graphite reporter: %s, %s. Value type is: %s. timestamp is %d", p.name, p.value, p.value.getClass().getCanonicalName(), taskInfo.timestamp));
+			//yikes, we must use Run Time Type Information.
+			if(p.value instanceof Map) {
+				//storm uses raw map without generic types
+				Set<Map.Entry> entries = ((Map) p.value).entrySet();
+				for(Map.Entry e : entries) {
+					reporter.enqueue(String.format("%s %s %d", OutputFormatConstructs.formatStringForGraphite(format, taskInfo, p.name, (String) e.getKey()), e.getValue(), taskInfo.timestamp));
+				}
+			} else if(p.value instanceof Number) {
+				reporter.enqueue(String.format("%s %s %d", OutputFormatConstructs.formatStringForGraphite(formatSingle, taskInfo, p.name, null), p.value, taskInfo.timestamp));
+			} else {
+				//(relatively) Silent failure, as all kinds of metrics can be sent here 
+				LOG.debug(String.format("Got datapoint with unsupported type, %s", p.value.getClass().getCanonicalName()));
+			}          
+		}	
 	}
 
 	public void cleanup() {
-		/* do nothing */
+		/* shut down reporter thread */
+		LOG.info("Shutting down graphite reporting thread");
+		reporter.signalStop();
+		reporter.interrupt();
 	}
 	
 	/***
