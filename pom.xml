@@ -5,7 +5,7 @@
 	<artifactId>storm-graphite-metrics</artifactId>
 	<packaging>jar</packaging>
 	<name>storm-graphite-metrics</name>
-	<version>0.1</version>
+	<version>0.2</version>
 	<description>Push Apache Storm metrics to graphite</description>
 	<url>https://github.com/Aloomaio/storm-graphite-metrics</url>
 	<licenses>
