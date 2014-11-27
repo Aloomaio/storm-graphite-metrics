@@ -96,6 +96,14 @@ public class GraphiteMetricsReporter extends Thread {
 				LOG.warn("Interrupted during sleep on graphite reporter thread", e);
 			} catch(Throwable t) {
 				LOG.error("Caught throwable in graphite reporter thread", t);
+			} finally {
+				if(null != socket) {
+					try {
+						socket.close();
+					} catch (IOException e) {
+						LOG.error("Exception when closing socket", e);
+					}
+				}
 			}
 		}
 		LOG.info("graphite reporter thread was signalled to stop, shouldRun value is {}", shouldRun);
